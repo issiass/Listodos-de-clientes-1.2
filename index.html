@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clientes - Productos Josny</title>
+<style>
+  :root {
+    --ink: #14202b;
+    --muted: #5d6b78;
+    --azul: #0d5c8f;
+    --agua: #e6f3fa;
+    --linea: #cbd6df;
+    --fondo: #e4eaef;
+    --papel: #ffffff;
+    --foco: #1b8fd6;
+    --rojo: #b34a4a;
+    --verde: #1f7a4d;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--fondo); color: var(--ink);
+    font-family: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+    font-size: 15px; line-height: 1.4;
+  }
+
+  /* ---------- Barra superior ---------- */
+  .barra {
+    position: sticky; top: 0; z-index: 5; background: var(--azul); color: #fff;
+    display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; justify-content: space-between;
+    padding: 12px 20px;
+  }
+  .barra h1 { font-size: 17px; font-weight: 600; margin: 0; }
+  .acciones { display: flex; flex-wrap: wrap; gap: 8px; }
+  button, .btn-archivo {
+    font: inherit; cursor: pointer; border-radius: 6px; padding: 8px 14px;
+    border: 1px solid rgba(255,255,255,.55); background: transparent; color: #fff;
+  }
+  button:hover, .btn-archivo:hover { background: rgba(255,255,255,.14); }
+  .btn-archivo input { display: none; }
+  button:focus-visible, input:focus-visible, textarea:focus-visible, .btn-archivo:focus-within {
+    outline: 2px solid var(--foco); outline-offset: 1px;
+  }
+
+  /* ---------- Estructura ---------- */
+  .contenido {
+    max-width: 1080px; margin: 18px auto 40px; padding: 0 16px;
+    display: grid; grid-template-columns: 340px 1fr; gap: 18px; align-items: start;
+  }
+  .panel {
+    background: var(--papel); padding: 20px;
+    box-shadow: 0 1px 3px rgba(20,32,43,.18), 0 8px 24px rgba(20,32,43,.08);
+  }
+  .panel h2 { margin: 0 0 14px; font-size: 17px; }
+  .form { position: sticky; top: 70px; }
+
+  /* ---------- Formulario ---------- */
+  label { display: block; margin-bottom: 10px; }
+  label span { display: block; font-size: 13px; color: var(--muted); margin-bottom: 2px; }
+  input[type="text"], input[type="tel"], input[type="email"], input[type="search"], textarea {
+    font: inherit; color: inherit; width: 100%; padding: 7px 9px;
+    border: 1px solid var(--linea); border-radius: 4px; background: #fff;
+  }
+  textarea { resize: vertical; min-height: 60px; }
+  .par { display: grid; grid-template-columns: 1fr 1fr; gap: 0 10px; }
+  .error { color: var(--rojo); font-size: 13px; min-height: 18px; margin: 0 0 6px; }
+  .botones { display: flex; gap: 8px; }
+  .btn-principal {
+    background: var(--azul); color: #fff; border-color: var(--azul); font-weight: 600; flex: 1;
+  }
+  .btn-principal:hover { background: #0a4a74; }
+  .btn-sec { color: var(--azul); border-color: var(--linea); }
+  .btn-sec:hover { background: var(--agua); }
+
+  /* ---------- Listado ---------- */
+  .encabezado-lista { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .encabezado-lista h2 { margin: 0; }
+  .buscar { flex: 1; min-width: 200px; max-width: 320px; }
+  .estado { font-size: 13px; color: var(--muted); margin: 0 0 8px; }
+  .estado.aviso { color: var(--rojo); font-weight: 600; }
+  ul.lista { list-style: none; margin: 0; padding: 0; }
+  .cliente { padding: 12px 0; border-top: 1px solid var(--linea); display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; }
+  .cliente:first-child { border-top: 2px solid var(--azul); }
+  .cliente .nombre { font-weight: 600; font-size: 16px; }
+  .cliente .contacto { color: var(--muted); font-size: 13.5px; }
+  .datos { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 2px 18px; font-size: 13.5px; }
+  .datos b { color: var(--muted); font-weight: 400; }
+  .nota { grid-column: 1 / -1; font-size: 13.5px; background: #f6fafc; border-left: 3px solid var(--linea); padding: 4px 8px; white-space: pre-wrap; }
+  .acc { display: flex; gap: 6px; align-self: start; }
+  .acc button { padding: 4px 10px; font-size: 13px; border-color: var(--linea); color: var(--azul); }
+  .acc button:hover { background: var(--agua); }
+  .acc .borrar { color: var(--rojo); }
+  .acc .borrar:hover { background: #fbeaea; }
+  .vacio { padding: 26px 0; color: var(--muted); }
+
+  /* ---------- Aviso emergente ---------- */
+  #toast {
+    position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%);
+    background: var(--ink); color: #fff; padding: 9px 16px; border-radius: 6px; font-size: 14px;
+    opacity: 0; pointer-events: none; transition: opacity .2s;
+  }
+  #toast.visible { opacity: 1; }
+
+  /* ---------- Impresión / PDF ---------- */
+  #impresion { display: none; }
+  @page { size: letter landscape; margin: 12mm; }
+  @media print {
+    body { background: #fff; font-size: 11px; }
+    .barra, .contenido, #toast { display: none !important; }
+    #impresion { display: block; }
+    #impresion h1 { margin: 0 0 2px; font-size: 20px; color: var(--azul); }
+    #impresion p { margin: 0 0 10px; color: var(--muted); font-size: 12px; }
+    #impresion table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    #impresion th { background: var(--azul); color: #fff; text-align: left; padding: 5px 6px; font-size: 11px;
+      -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    #impresion td { border-bottom: 1px solid var(--linea); padding: 5px 6px; vertical-align: top; overflow-wrap: anywhere; }
+    #impresion thead { display: table-header-group; }
+    #impresion tr { break-inside: avoid; }
+    #impresion tbody tr:nth-child(even) td { background: #f6fafc; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+
+  @media (max-width: 820px) {
+    .contenido { grid-template-columns: 1fr; }
+    .form { position: static; }
+  }
+</style>
+</head>
+<body>
+
+<header class="barra">
+  <h1>Clientes · Productos Josny</h1>
+  <div class="acciones">
+    <button type="button" id="btnPdf">Guardar copia (PDF)</button>
+    <button type="button" id="btnExportar">Respaldo (.json)</button>
+    <label class="btn-archivo" style="margin:0">Restaurar respaldo<input type="file" id="archivo" accept="application/json,.json"></label>
+  </div>
+</header>
+
+<main class="contenido">
+  <section class="panel form" aria-labelledby="tituloForm">
+    <h2 id="tituloForm">Nuevo cliente</h2>
+    <form id="form" autocomplete="off" novalidate>
+      <label><span>Nombre o razón social *</span><input type="text" id="nombre" placeholder="Ej.: Escuela Salomé Ureña"></label>
+      <label><span>Persona de contacto</span><input type="text" id="contacto" placeholder="Ej.: Pedro"></label>
+      <div class="par">
+        <label><span>RNC</span><input type="text" id="rnc" inputmode="numeric"></label>
+        <label><span>Cédula</span><input type="text" id="cedula" inputmode="numeric"></label>
+      </div>
+      <div class="par">
+        <label><span>Teléfono</span><input type="tel" id="telefono"></label>
+        <label><span>Correo</span><input type="email" id="correo"></label>
+      </div>
+      <label><span>Dirección</span><input type="text" id="direccion"></label>
+      <label><span>Notas</span><textarea id="notas" placeholder="Ej.: Paga a crédito, entregar por la mañana."></textarea></label>
+      <p class="error" id="error" role="alert"></p>
+      <div class="botones">
+        <button type="submit" class="btn-principal" id="btnGuardar">Guardar cliente</button>
+        <button type="button" class="btn-sec" id="btnCancelar" hidden>Cancelar</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="panel" aria-labelledby="tituloLista">
+    <div class="encabezado-lista">
+      <h2 id="tituloLista">Listado de clientes</h2>
+      <input type="search" id="buscar" class="buscar" placeholder="Buscar por nombre, RNC, teléfono…" aria-label="Buscar cliente">
+    </div>
+    <p class="estado" id="estado"></p>
+    <ul class="lista" id="lista"></ul>
+  </section>
+</main>
+
+<section id="impresion" aria-hidden="true">
+  <h1>Clientes · Productos Josny Industrial</h1>
+  <p id="impInfo"></p>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:17%">Nombre</th><th style="width:11%">Contacto</th><th style="width:9%">RNC</th>
+        <th style="width:10%">Cédula</th><th style="width:10%">Teléfono</th><th style="width:14%">Correo</th>
+        <th style="width:15%">Dirección</th><th style="width:14%">Notas</th>
+      </tr>
+    </thead>
+    <tbody id="impCuerpo"></tbody>
+  </table>
+</section>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var CLAVE = 'josny_clientes_v1';
+  var CAMPOS = ['nombre', 'contacto', 'rnc', 'cedula', 'telefono', 'correo', 'direccion', 'notas'];
+  var ETIQUETAS = { rnc: 'RNC', cedula: 'Cédula', telefono: 'Teléfono', correo: 'Correo', direccion: 'Dirección' };
+  var clientes = [];
+  var editandoId = null;
+  var almacenamientoOk = true;
+
+  /* ---- Almacenamiento local ---- */
+  function probarAlmacenamiento() {
+    try {
+      localStorage.setItem(CLAVE + '_prueba', '1');
+      localStorage.removeItem(CLAVE + '_prueba');
+    } catch (e) { almacenamientoOk = false; }
+  }
+  function cargar() {
+    var crudo = null;
+    try { crudo = localStorage.getItem(CLAVE); } catch (e) { almacenamientoOk = false; return []; }
+    if (!crudo) return [];
+    try {
+      var d = JSON.parse(crudo);
+      if (Array.isArray(d)) return d;
+    } catch (e) { /* datos dañados: se conserva una copia abajo */ }
+    try { localStorage.setItem(CLAVE + '_dañado', crudo); } catch (e) {}
+    return [];
+  }
+  function guardar() {
+    try {
+      localStorage.setItem(CLAVE, JSON.stringify(clientes));
+      return true;
+    } catch (e) {
+      almacenamientoOk = false;
+      pintarEstado();
+      return false;
+    }
+  }
+
+  /* ---- Utilidades ---- */
+  function nuevoId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+  function hoy() {
+    var d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+  var temporizador;
+  function aviso(texto) {
+    var t = $('toast');
+    t.textContent = texto;
+    t.classList.add('visible');
+    clearTimeout(temporizador);
+    temporizador = setTimeout(function () { t.classList.remove('visible'); }, 2200);
+  }
+  function el(tag, clase, texto) {
+    var e = document.createElement(tag);
+    if (clase) e.className = clase;
+    if (texto !== undefined) e.textContent = texto;
+    return e;
+  }
+
+  /* ---- Listado ---- */
+  function pintarEstado(mostrados) {
+    var e = $('estado');
+    if (!almacenamientoOk) {
+      e.className = 'estado aviso';
+      e.textContent = 'Este navegador no permite guardar datos (¿modo privado?). Lo que agregues se perderá al cerrar la página.';
+      return;
+    }
+    e.className = 'estado';
+    var total = clientes.length;
+    var txt = total + (total === 1 ? ' cliente guardado' : ' clientes guardados') + ' en este equipo';
+    if (typeof mostrados === 'number' && mostrados !== total) txt += ' · mostrando ' + mostrados;
+    e.textContent = txt;
+  }
+
+  function pintar() {
+    var q = $('buscar').value.trim().toLowerCase();
+    var lista = $('lista');
+    lista.innerHTML = '';
+    var visibles = clientes.slice().sort(function (a, b) {
+      return (a.nombre || '').localeCompare(b.nombre || '', 'es', { sensitivity: 'base' });
+    }).filter(function (c) {
+      if (!q) return true;
+      return CAMPOS.some(function (k) { return (c[k] || '').toLowerCase().indexOf(q) !== -1; });
+    });
+
+    visibles.forEach(function (c) {
+      var li = el('li', 'cliente');
+      var cab = el('div');
+      cab.appendChild(el('div', 'nombre', c.nombre));
+      if (c.contacto) cab.appendChild(el('div', 'contacto', 'Contacto: ' + c.contacto));
+      li.appendChild(cab);
+
+      var acc = el('div', 'acc');
+      var bEd = el('button', null, 'Editar'); bEd.type = 'button'; bEd.dataset.accion = 'editar'; bEd.dataset.id = c.id;
+      var bBo = el('button', 'borrar', 'Eliminar'); bBo.type = 'button'; bBo.dataset.accion = 'borrar'; bBo.dataset.id = c.id;
+      acc.appendChild(bEd); acc.appendChild(bBo);
+      li.appendChild(acc);
+
+      var datos = el('div', 'datos');
+      Object.keys(ETIQUETAS).forEach(function (k) {
+        if (!c[k]) return;
+        var s = el('span');
+        s.appendChild(el('b', null, ETIQUETAS[k] + ': '));
+        s.appendChild(document.createTextNode(c[k]));
+        datos.appendChild(s);
+      });
+      if (datos.childNodes.length) li.appendChild(datos);
+      if (c.notas) li.appendChild(el('div', 'nota', c.notas));
+      lista.appendChild(li);
+    });
+
+    if (!visibles.length) {
+      lista.appendChild(el('li', 'vacio', clientes.length
+        ? 'Ningún cliente coincide con la búsqueda.'
+        : 'Aún no hay clientes. Completa el formulario para agregar el primero.'));
+    }
+    pintarEstado(visibles.length);
+  }
+
+  /* ---- Formulario ---- */
+  function limpiarForm() {
+    CAMPOS.forEach(function (k) { $(k).value = ''; });
+    editandoId = null;
+    $('tituloForm').textContent = 'Nuevo cliente';
+    $('btnGuardar').textContent = 'Guardar cliente';
+    $('btnCancelar').hidden = true;
+    $('error').textContent = '';
+  }
+
+  $('form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var c = {};
+    CAMPOS.forEach(function (k) { c[k] = $(k).value.trim(); });
+    if (!c.nombre) {
+      $('error').textContent = 'Escribe el nombre o la razón social del cliente.';
+      $('nombre').focus();
+      return;
+    }
+    if (editandoId) {
+      clientes = clientes.map(function (x) { return x.id === editandoId ? Object.assign({}, x, c) : x; });
+    } else {
+      c.id = nuevoId();
+      clientes.push(c);
+    }
+    var ok = guardar();
+    var eraEdicion = !!editandoId;
+    limpiarForm();
+    pintar();
+    aviso(ok ? (eraEdicion ? 'Cambios guardados' : 'Cliente guardado') : 'No se pudo guardar en este navegador');
+    $('nombre').focus();
+  });
+
+  $('btnCancelar').addEventListener('click', limpiarForm);
+  $('buscar').addEventListener('input', pintar);
+
+  $('lista').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-accion]');
+    if (!b) return;
+    var c = clientes.filter(function (x) { return x.id === b.dataset.id; })[0];
+    if (!c) return;
+    if (b.dataset.accion === 'editar') {
+      CAMPOS.forEach(function (k) { $(k).value = c[k] || ''; });
+      editandoId = c.id;
+      $('tituloForm').textContent = 'Editar cliente';
+      $('btnGuardar').textContent = 'Guardar cambios';
+      $('btnCancelar').hidden = false;
+      $('error').textContent = '';
+      $('nombre').focus();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else if (confirm('¿Eliminar a «' + c.nombre + '»? Esta acción no se puede deshacer.')) {
+      clientes = clientes.filter(function (x) { return x.id !== c.id; });
+      if (editandoId === c.id) limpiarForm();
+      guardar(); pintar();
+      aviso('Cliente eliminado');
+    }
+  });
+
+  /* ---- Copia en PDF (usa el cuadro de impresión: «Guardar como PDF») ---- */
+  var tituloOriginal = document.title;
+  $('btnPdf').addEventListener('click', function () {
+    if (!clientes.length) { aviso('Aún no hay clientes para guardar'); return; }
+    var cuerpo = $('impCuerpo');
+    cuerpo.innerHTML = '';
+    clientes.slice().sort(function (a, b) {
+      return (a.nombre || '').localeCompare(b.nombre || '', 'es', { sensitivity: 'base' });
+    }).forEach(function (c) {
+      var tr = document.createElement('tr');
+      CAMPOS.forEach(function (k) {
+        var td = document.createElement('td');
+        td.textContent = c[k] || '';
+        tr.appendChild(td);
+      });
+      cuerpo.appendChild(tr);
+    });
+    $('impInfo').textContent = 'Fecha: ' + new Date().toLocaleDateString('es-DO') + ' — ' +
+      clientes.length + (clientes.length === 1 ? ' cliente' : ' clientes');
+    document.title = 'Clientes Josny - ' + hoy();
+    window.print();
+  });
+  window.addEventListener('afterprint', function () { document.title = tituloOriginal; });
+
+  /* ---- Respaldo para restaurar (.json) ---- */
+  $('btnExportar').addEventListener('click', function () {
+    var blob = new Blob([JSON.stringify(clientes, null, 2)], { type: 'application/json' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'clientes-josny-' + hoy() + '.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    aviso('Copia descargada');
+  });
+
+  $('archivo').addEventListener('change', function (e) {
+    var f = e.target.files[0];
+    e.target.value = '';
+    if (!f) return;
+    var lector = new FileReader();
+    lector.onload = function () {
+      var datos;
+      try { datos = JSON.parse(lector.result); } catch (err) { datos = null; }
+      if (!Array.isArray(datos) || !datos.every(function (x) { return x && typeof x.nombre === 'string'; })) {
+        alert('El archivo no es una copia válida de clientes.');
+        return;
+      }
+      if (!confirm('Se van a restaurar ' + datos.length + ' clientes. Los que ya existan se actualizan y los demás se conservan. ¿Continuar?')) return;
+      var mapa = {};
+      clientes.forEach(function (c) { mapa[c.id] = c; });
+      datos.forEach(function (d) {
+        var limpio = { id: typeof d.id === 'string' && d.id ? d.id : nuevoId() };
+        CAMPOS.forEach(function (k) { limpio[k] = typeof d[k] === 'string' ? d[k] : ''; });
+        mapa[limpio.id] = limpio;
+      });
+      clientes = Object.keys(mapa).map(function (k) { return mapa[k]; });
+      guardar(); pintar();
+      aviso('Copia restaurada');
+    };
+    lector.readAsText(f);
+  });
+
+  /* ---- Inicio ---- */
+  probarAlmacenamiento();
+  clientes = cargar();
+  // Pide al navegador que no borre estos datos por falta de espacio
+  try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
+  pintar();
+})();
+</script>
+</body>
+</html>
